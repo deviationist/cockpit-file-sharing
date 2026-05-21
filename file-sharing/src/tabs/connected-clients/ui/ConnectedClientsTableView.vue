@@ -126,6 +126,16 @@ const formatDate = (d: Date | null): string => (d ? d.toLocaleString() : "—");
 const fallback = (v: string | null | undefined): string =>
   v && v.length > 0 ? v : "—";
 
+// NFS Share is derived from active opens because the kernel doesn't expose a
+// per-client mount list for NFSv4 (no tcon concept). Surface that caveat as
+// a hover tooltip so operators don't read a blank cell as "not mounted".
+const shareTooltip = (c: ConnectedClient): string | undefined => {
+  if (c.protocol !== "nfs") return undefined;
+  return _(
+    'NFS: derived from active opens (the kernel doesn\'t expose a per-client mount list for NFSv4). An idle-but-mounted client will show "—" here even when connected; the column reflects what is currently being read/written, not what is mounted.'
+  );
+};
+
 // Column definitions for the sortable header row. Labels are wrapped in _()
 // at module init time, matching the convention used elsewhere in this project
 // (e.g. tabVisibilityOptions in UserSettingsView.vue).
@@ -211,7 +221,9 @@ const sortableColumns: { field: SortField; label: string }[] = [
                 </div>
               </td>
               <td class="font-mono text-sm">{{ client.protocolVersion }}</td>
-              <td>{{ fallback(client.share) }}</td>
+              <td :title="shareTooltip(client)">
+                {{ fallback(client.share) }}
+              </td>
               <td>{{ formatDate(client.connectedSince) }}</td>
               <td>{{ client.openFiles }}</td>
               <td>{{ client.encrypted ? _("Yes") : _("No") }}</td>
@@ -228,6 +240,9 @@ const sortableColumns: { field: SortField; label: string }[] = [
           </template>
         </Table>
       </div>
+      <p class="text-muted text-sm mt-3">
+        {{ _("Note: NFS clients only appear while their NFSv4 lease is active (~90 s of recent I/O). An idle-but-mounted client may briefly disappear from this list until its next operation re-confirms the lease.") }}
+      </p>
     </div>
   </CardContainer>
 </template>
