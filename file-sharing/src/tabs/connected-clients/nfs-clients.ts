@@ -219,7 +219,7 @@ export function deriveShares(
   return [...shares].sort().join(", ");
 }
 
->export function parseDump(stdout: string): ConnectedClient[] {
+export function parseDump(stdout: string): ConnectedClient[] {
   const out: ConnectedClient[] = [];
   if (!stdout.trim()) return out;
 
